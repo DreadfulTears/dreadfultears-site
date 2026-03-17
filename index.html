@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dreadful Tears</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Cinzel:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --red:       #c41e3a;
+      --red-bright:#e8244a;
+      --red-dim:   #7a0e20;
+      --red-glow:  rgba(196,30,58,0.4);
+      --gold:      #c9a84c;
+      --gold-dim:  rgba(201,168,76,0.15);
+      --gold-line: rgba(201,168,76,0.35);
+      --bg:        #080009;
+      --bg2:       #0d000f;
+      --surface:   #120014;
+      --surface2:  #1a001e;
+      --text:      #f2eaf4;
+      --text-muted:#9a7aa8;
+    }
+
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+    html { scroll-behavior:smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Cinzel', Georgia, serif;
+      overflow-x: hidden;
+    }
+
+    ::-webkit-scrollbar { width:5px; }
+    ::-webkit-scrollbar-track { background:var(--bg); }
+    ::-webkit-scrollbar-thumb { background:var(--red-dim); }
+
+    #canvas {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .filigree-bg {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0.06;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Cg fill='none' stroke='%23c9a84c' stroke-width='1'%3E%3Cpath d='M100 10 C60 10 20 40 20 80 C20 120 60 140 100 140 C140 140 180 120 180 80 C180 40 140 10 100 10Z'/%3E%3Cpath d='M100 30 C70 30 40 50 40 80 C40 110 70 120 100 120 C130 120 160 110 160 80 C160 50 130 30 100 30Z'/%3E%3Ccircle cx='100' cy='80' r='8'/%3E%3C/g%3E%3C/svg%3E");
+      background-size: 200px 200px;
+    }
+
+    /* NAV */
+    nav {
+      position: fixed;
+      top:0; left:0; right:0;
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 52px;
+      height: 68px;
+      background: linear-gradient(to bottom, rgba(8,0,9,0.97), rgba(8,0,9,0.6));
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--gold-line);
+    }
+
+    .nav-logo {
+      font-family: 'Cinzel Decorative', serif;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--red);
+      text-decoration: none;
+      letter-spacing: 2px;
+      text-shadow: 0 0 20px var(--red-glow);
+    }
+
+    .nav-links { display:flex; gap:40px; list-style:none; }
+
+    .nav-links a {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--gold); }
+
+    /* HERO */
+    #hero {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 120px 8vw 80px;
+      z-index: 1;
+      background: radial-gradient(ellipse at 30% 50%, rgba(196,30,58,0.11) 0%, transparent 60%);
+      overflow: hidden;
+    }
+
+    .hero-eyebrow {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: var(--red);
+      margin-bottom: 16px;
+      opacity: 0;
+      animation: riseIn 0.8s 0.2s forwards;
+    }
+
+    .hero-name {
+      font-family: 'Cinzel Decorative', serif;
+      font-size: clamp(3rem, 9vw, 8rem);
+      font-weight: 900;
+      line-height: 1.05;
+      color: var(--text);
+      letter-spacing: 3px;
+      opacity: 0;
+      animation: riseIn 1s 0.4s forwards;
+    }
+
+    .hero-name .red {
+      color: var(--red);
+      display: block;
+      text-shadow: 0 0 40px var(--red-glow), 0 0 80px rgba(196,30,58,0.2);
+      animation: pulseGlow 4s ease-in-out infinite;
+    }
+
+    @keyframes pulseGlow {
+      0%,100% { text-shadow: 0 0 30px var(--red-glow), 0 0 60px rgba(196,30,58,0.15); }
+      50%      { text-shadow: 0 0 60px var(--red-glow), 0 0 110px rgba(196,30,58,0.28); }
+    }
+
+    .hero-rule {
+      width: 220px;
+      height: 1px;
+      background: linear-gradient(to right, var(--gold), transparent);
+      margin: 24px 0;
+      opacity: 0;
+      animation: riseIn 0.8s 0.65s forwards;
+    }
+
+    .hero-tagline {
+      font-size: clamp(0.9rem, 1.8vw, 1.1rem);
+      font-style: italic;
+      color: var(--text-muted);
+      letter-spacing: 1px;
+      max-width: 480px;
+      line-height: 1.9;
+      opacity: 0;
+      animation: riseIn 0.8s 0.85s forwards;
+    }
+
+    .hero-badges {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 24px;
+      opacity: 0;
+      animation: riseIn 0.8s 1.05s forwards;
+    }
+
+    .badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.62rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 5px 12px;
+      border-radius: 2px;
+    }
+
+    .badge-red  { border:1px solid rgba(196,30,58,0.45); color:#ff8899; background:rgba(196,30,58,0.1); }
+    .badge-gold { border:1px solid var(--gold-line); color:var(--gold); background:var(--gold-dim); }
+
+    .hero-buttons {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 36px;
+      opacity: 0;
+      animation: riseIn 0.8s 1.25s forwards;
+    }
+
+    .btn {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      text-decoration: none;
+      padding: 13px 28px;
+      border-radius: 1px;
+      transition: all 0.25s;
+      display: inline-block;
+      cursor: pointer;
+    }
+
+    .btn-primary { background:var(--red); color:white; border:1px solid var(--red); }
+    .btn-primary:hover { background:transparent; color:var(--red-bright); box-shadow:0 0 28px var(--red-glow); }
+
+    .btn-gold { background:transparent; color:var(--gold); border:1px solid var(--gold-line); }
+    .btn-gold:hover { background:var(--gold-dim); }
+
+    .btn-ghost { background:transparent; color:var(--text-muted); border:1px solid rgba(255,255,255,0.08); }
+    .btn-ghost:hover { border-color:rgba(196,30,58,0.35); color:var(--text); }
+
+    /* Avatar */
+    .avatar-wrap {
+      position: absolute;
+      right: 0;
+      bottom: 0;
+      height: 90%;
+      display: flex;
+      align-items: flex-end;
+      pointer-events: none;
+      opacity: 0;
+      animation: slideAvatar 1.2s 0.5s forwards;
+    }
+
+    .avatar-wrap img {
+      height: 100%;
+      max-height: 660px;
+      width: auto;
+      object-fit: contain;
+      filter:
+        drop-shadow(-8px 0 50px rgba(196,30,58,0.6))
+        drop-shadow(0 -4px 30px rgba(196,30,58,0.3))
+        drop-shadow(0 0 100px rgba(196,30,58,0.15));
+    }
+
+    @keyframes slideAvatar {
+      from { opacity:0; transform:translateX(40px); }
+      to   { opacity:1; transform:translateX(0); }
+    }
+
+    /* DIVIDER */
+    .divider {
+      height: 1px;
+      background: linear-gradient(to right, transparent, var(--red-dim), transparent);
+      opacity: 0.3;
+      position: relative; z-index:1;
+    }
+
+    /* FOOTER */
+    footer {
+      position: relative; z-index:1;
+      border-top: 1px solid var(--gold-line);
+      padding: 34px 52px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+      background: var(--bg);
+    }
+
+    .footer-logo {
+      font-family: 'Cinzel Decorative', serif;
+      font-size: 0.95rem;
+      font-weight: 700;
+      letter-spacing: 3px;
+      color: var(--red);
+      text-shadow: 0 0 16px var(--red-glow);
+    }
+
+    .footer-copy {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.6rem;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+    }
+
+    /* NEWSLETTER */
+    #newsletter {
+      position: relative;
+      z-index: 1;
+      background: var(--bg2);
+    }
+
+    .newsletter-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 64px 48px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 40px;
+      flex-wrap: wrap;
+    }
+
+    .newsletter-title {
+      font-family: 'Cinzel Decorative', serif;
+      font-size: 1.2rem;
+      letter-spacing: 2px;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+
+    .newsletter-sub {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+    }
+
+    .newsletter-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .newsletter-input {
+      background: var(--surface);
+      border: 1px solid rgba(201,168,76,0.2);
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      padding: 13px 16px;
+      outline: none;
+      border-radius: 1px;
+      width: 280px;
+      transition: border-color 0.2s;
+    }
+
+    .newsletter-input:focus { border-color: var(--red); }
+    .newsletter-input::placeholder { color: var(--text-muted); }
+
+    .newsletter-msg {
+      margin-top: 10px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem;
+      letter-spacing: 1px;
+      padding: 8px 14px;
+      border-radius: 2px;
+    }
+
+    .newsletter-msg--error { background:rgba(196,30,58,0.15); color:#ff8899; border:1px solid var(--red-dim); }
+    .newsletter-msg--success { background:rgba(19,206,102,0.1); color:#13ce66; border:1px solid rgba(19,206,102,0.3); }
+
+    @media (max-width:900px) {
+      .newsletter-inner { flex-direction:column; align-items:flex-start; padding:48px 24px; }
+      .newsletter-input { width:100%; }
+      .newsletter-row { width:100%; }
+    }
+
+    @keyframes riseIn {
+      from { opacity:0; transform:translateY(20px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+
+    @media (max-width:900px) {
+      nav { padding:0 24px; }
+      footer { flex-direction:column; align-items:center; text-align:center; }
+    }
+    @media (max-width:540px) {
+      .nav-links { display:none; }
+      .hero-name { font-size:2.8rem; }
+      .avatar-wrap { display:none; }
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="canvas"></canvas>
+<div class="filigree-bg"></div>
+
+<nav>
+  <a class="nav-logo" href="#hero">Dreadful Tears</a>
+  <ul class="nav-links">
+    <li><a href="#hero">Home</a></li>
+    <li><a href="https://twitch.tv/dreadfultears" target="_blank">Watch</a></li>
+    <li><a href="https://discord.gg/dreadfultears" target="_blank">Community</a></li>
+  </ul>
+</nav>
+
+<section id="hero">
+  <p class="hero-eyebrow">// BAE SPORTS</p>
+  <h1 class="hero-name">
+    Dreadful
+    <span class="red">Tears</span>
+  </h1>
+  <div class="hero-rule"></div>
+  <p class="hero-tagline">
+    Live streams, highlights, and all the moments that made opponents cry.
+  </p>
+  <div class="hero-badges">
+    <span class="badge badge-red">Fortnite</span>
+    <span class="badge badge-red">Arc Raiders</span>
+    <span class="badge badge-gold">Competitive</span>
+    <span class="badge badge-gold">Live</span>
+    <span class="badge badge-gold">Tournaments</span>
+  </div>
+  <div class="hero-buttons">
+    <a href="https://twitch.tv/dreadfultears" target="_blank" class="btn btn-primary">Watch Live</a>
+    <a href="https://discord.gg/dreadfultears" target="_blank" class="btn btn-gold">Join Discord</a>
+    <a href="https://www.tiktok.com/@dreadfultears_" target="_blank" class="btn btn-ghost">TikTok</a>
+    <a href="https://www.youtube.com/@DreadfulTears" target="_blank" class="btn btn-ghost">YouTube</a>
+    <a href="https://www.instagram.com/_dreadfultears/" target="_blank" class="btn btn-ghost">Instagram</a>
+  </div>
+
+  <div class="avatar-wrap">
+    <img src="avatar.png" alt="Dreadful Tears"/>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- NEWSLETTER -->
+<section id="newsletter">
+  <div class="newsletter-inner">
+    <div class="newsletter-text">
+      <p class="newsletter-title">Join The Realm</p>
+      <p class="newsletter-sub">Stream updates, merch drops, tournament news. No spam.</p>
+    </div>
+    <form id="sib-form" method="POST" action="https://f2dfa7fb.sibforms.com/serve/MUIFAO4QLdIhOVrqFrwwZj8GmMMHWWr6cYdmSbB5cwxm2HeThex7LWia_FMxVg_2xs1QZk062FiENDNTFArgq7plIVffEYpxD93Pq9fJfNbwCixfJ77AS6MosSMWrSdW2l55CQ1LNIhKlZn9i2GtrB9SL3_3SgjjnaE5GZ3ZeztuzS5G4OmFmLqcZbV1K6AIiB0gFD8WLJUkUqe1XQ==" data-type="subscription">
+      <div class="newsletter-row">
+        <input class="newsletter-input" type="email" id="EMAIL" name="EMAIL" placeholder="your@email.com" data-required="true" required autocomplete="off"/>
+        <button class="btn btn-primary" type="submit">Subscribe</button>
+      </div>
+      <div id="error-message" class="newsletter-msg newsletter-msg--error" style="display:none;">Could not subscribe. Please try again.</div>
+      <div id="success-message" class="newsletter-msg newsletter-msg--success" style="display:none;">You're in. Welcome to the realm.</div>
+      <input type="text" name="email_address_check" value="" style="display:none;">
+      <input type="hidden" name="locale" value="en">
+    </form>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<footer>
+  <div class="footer-logo">Dreadful Tears</div>
+  <div class="footer-copy">© 2026 dreadfultears.com · All rights reserved</div>
+</footer>
+
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+function resize() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+class Tear {
+  constructor() { this.reset(true); }
+  reset(init) {
+    this.x = Math.random() * canvas.width;
+    this.y = init ? Math.random() * canvas.height : -20;
+    this.size = Math.random() * 8 + 4;
+    this.speed = Math.random() * 1.5 + 0.6;
+    this.opacity = Math.random() * 0.55 + 0.2;
+    this.wobble = Math.random() * Math.PI * 2;
+    this.wobbleSpeed = (Math.random() - 0.5) * 0.03;
+    this.stretch = Math.random() * 0.6 + 1.2;
+  }
+
+  draw() {
+    ctx.save();
+    ctx.translate(this.x, this.y);
+    ctx.globalAlpha = this.opacity;
+    const s = this.size;
+    const h = s * this.stretch * 2;
+
+    ctx.beginPath();
+    ctx.arc(0, h * 0.35, s * 0.72, 0, Math.PI * 2);
+    ctx.moveTo(-s * 0.72, h * 0.35);
+    ctx.quadraticCurveTo(-s * 0.3, -h * 0.1, 0, -h * 0.65);
+    ctx.quadraticCurveTo(s * 0.3, -h * 0.1, s * 0.72, h * 0.35);
+
+    const g = ctx.createRadialGradient(0, h*0.1, 0, 0, h*0.2, s*1.4);
+    g.addColorStop(0, 'rgba(232,36,74,0.95)');
+    g.addColorStop(0.5, 'rgba(196,30,58,0.7)');
+    g.addColorStop(1, 'rgba(122,14,32,0.15)');
+    ctx.fillStyle = g;
+    ctx.fill();
+
+    // shine highlight
+    ctx.beginPath();
+    ctx.ellipse(-s*0.2, h*0.05, s*0.18, s*0.3, -0.4, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(255,180,180,0.4)';
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  update() {
+    this.y += this.speed;
+    this.wobble += this.wobbleSpeed;
+    this.x += Math.sin(this.wobble) * 0.4;
+    if (this.y > canvas.height * 0.75) this.opacity *= 0.97;
+    if (this.y > canvas.height + 20 || this.opacity < 0.01) this.reset(false);
+  }
+}
+
+const tears = [];
+for (let i = 0; i < 60; i++) tears.push(new Tear());
+
+function loop() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  tears.forEach(t => { t.update(); t.draw(); });
+  ctx.globalAlpha = 1;
+  requestAnimationFrame(loop);
+}
+loop();
+</script>
+
+<link rel="stylesheet" href="https://sibforms.com/forms/end-form/build/sib-styles.css">
+<script>
+  window.REQUIRED_CODE_ERROR_MESSAGE = 'Please choose a country code';
+  window.LOCALE = 'en';
+  window.EMAIL_INVALID_MESSAGE = "Invalid email. Please try again.";
+  window.REQUIRED_ERROR_MESSAGE = "This field cannot be left blank.";
+  window.GENERIC_INVALID_MESSAGE = "Invalid information. Please try again.";
+  window.translation = { common: { selectedList: '{quantity} list selected', selectedLists: '{quantity} lists selected' } };
+  var AUTOHIDE = Boolean(0);
+</script>
+<script defer src="https://sibforms.com/forms/end-form/build/main.js"></script>
+</body>
+</html>
